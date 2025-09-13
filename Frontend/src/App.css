@@ -1,0 +1,163 @@
+/* Additional custom styles for the App component */
+
+.app-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* Smooth page transitions */
+.page-transition {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading animation enhancements */
+.loading-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.loading-spinner {
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 3px solid white;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+/* Enhanced mobile navigation */
+.mobile-nav {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive grid improvements */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* Enhanced card styles */
+.enhanced-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.enhanced-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Button enhancements */
+.btn-primary {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  transform: translateY(-1px);
+}
+
+/* Search bar enhancements */
+.search-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.search-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.search-container:focus-within::before {
+  left: 100%;
+}
+
+/* Category icons animation */
+.category-icon {
+  transition: all 0.3s ease;
+}
+
+.category-icon:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Product image lazy loading effect */
+.product-image {
+  transition: all 0.3s ease;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.product-image.loaded {
+  animation: none;
+  background: none;
+}
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Accessibility improvements */
+.focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .app-container {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  }
+  
+  .enhanced-card {
+    background: #374151;
+    color: white;
+  }
+}
