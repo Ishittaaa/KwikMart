@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Heart, Plus, RotateCcw } from 'lucide-react';
 import { formatPriceShort } from '../utils/currency';
+import { productsAPI } from '../services/api';
+import { useApi } from '../hooks/useApi';
 
 // Move ProductCard outside to prevent re-rendering
 const ProductCard = React.memo(({ product, showAnimation = true, isInWishlist, onToggleWishlist, onAddToCart, onImageLoad, loadedImages }) => (
@@ -60,21 +62,21 @@ const ProductCard = React.memo(({ product, showAnimation = true, isInWishlist, o
         <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 flex-1">
           {product.name}
         </h3>
-        {product.isVeg && (
+        {(product.is_veg || product.isVeg) && (
           <div className="ml-2 w-4 h-4 border-2 border-green-600 rounded-sm flex items-center justify-center">
             <div className="w-2 h-2 bg-green-600 rounded-full"></div>
           </div>
         )}
       </div>
 
-      <p className="text-xs text-gray-500 mb-2">{product.packSize}</p>
+      <p className="text-xs text-gray-500 mb-2">{product.pack_size || product.packSize}</p>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <span className="font-bold text-gray-800">{formatPriceShort(product.price)}</span>
-          {product.originalPrice && (
+          {(product.original_price || product.originalPrice) && (
             <span className="text-xs text-gray-500 line-through">
-              {formatPriceShort(product.originalPrice)}
+              {formatPriceShort(product.original_price || product.originalPrice)}
             </span>
           )}
         </div>
@@ -88,6 +90,22 @@ const HomeScreen = ({ onNavigate, cartCount, onAddToCart, wishlistItems, onToggl
   const [loadedImages, setLoadedImages] = useState(new Set());
   const categoryScrollRef = useRef(null);
   const [categoryScrollPosition, setCategoryScrollPosition] = useState(0);
+  
+  // Fetch featured products from API
+  const { data: featuredProducts, loading: productsLoading, error: productsError } = useApi(
+    () => productsAPI.getFeatured(),
+    []
+  );
+  
+  // Debug: Log the API response
+  useEffect(() => {
+    if (featuredProducts) {
+      console.log('Featured products from API:', featuredProducts);
+    }
+    if (productsError) {
+      console.error('Products API error:', productsError);
+    }
+  }, [featuredProducts, productsError]);
 
   const categories = [
     { id: 1, name: 'Fruits & Vegetables', icon: '🍎', color: 'bg-green-100 text-green-700', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300' },
@@ -127,66 +145,7 @@ const HomeScreen = ({ onNavigate, cartCount, onAddToCart, wishlistItems, onToggl
     },
   ];
 
-  const featuredProducts = [
-    {
-      id: 1,
-      name: 'Fresh Red Apples',
-      price: 120,
-      originalPrice: 160,
-      image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300',
-      isVeg: true,
-      packSize: '1 kg Pack',
-      discount: 25,
-      badge: 'Fresh'
-    },
-    {
-      id: 2,
-      name: 'Organic Carrots',
-      price: 80,
-      image: 'https://images.unsplash.com/photo-1445282768818-728615cc910a?w=300',
-      isVeg: true,
-      packSize: '500g Pack',
-      badge: 'Organic'
-    },
-    {
-      id: 3,
-      name: 'Fresh Milk',
-      price: 65,
-      image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300',
-      isVeg: true,
-      packSize: '1L Pack',
-      badge: 'Farm Fresh'
-    },
-    {
-      id: 4,
-      name: 'Premium Basmati Rice',
-      price: 350,
-      image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300',
-      isVeg: true,
-      packSize: '5kg Pack',
-      badge: 'Premium'
-    },
-    {
-      id: 5,
-      name: 'Mixed Dry Fruits',
-      price: 299,
-      originalPrice: 399,
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300',
-      isVeg: true,
-      packSize: '250g Pack',
-      discount: 25,
-      badge: 'Bestseller'
-    },
-    {
-      id: 6,
-      name: 'Whole Wheat Bread',
-      price: 45,
-      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300',
-      isVeg: true,
-      packSize: '1 Loaf',
-      badge: 'Fresh'
-    },
-  ];
+
 
   const previouslyBought = [
     {
@@ -409,20 +368,39 @@ const HomeScreen = ({ onNavigate, cartCount, onAddToCart, wishlistItems, onToggl
           </button>
         </div>
         
-        <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-6'} gap-4`}>
-          {featuredProducts.map((product, index) => (
-            <div key={product.id} style={{ animationDelay: `${index * 100}ms` }}>
-              <ProductCard 
-                product={product} 
-                isInWishlist={isInWishlist(product.id)}
-                onToggleWishlist={onToggleWishlist}
-                onAddToCart={onAddToCart}
-                onImageLoad={handleImageLoad}
-                loadedImages={loadedImages}
-              />
-            </div>
-          ))}
-        </div>
+        {productsLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
+                <div className="aspect-square bg-gray-200"></div>
+                <div className="p-4">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : productsError ? (
+          <div className="text-center py-8">
+            <p className="text-red-600">Failed to load products. Please try again.</p>
+          </div>
+        ) : (
+          <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-6'} gap-4`}>
+            {featuredProducts?.map((product, index) => (
+              <div key={product.id} style={{ animationDelay: `${index * 100}ms` }}>
+                <ProductCard 
+                  product={product} 
+                  isInWishlist={isInWishlist(product.id)}
+                  onToggleWishlist={onToggleWishlist}
+                  onAddToCart={onAddToCart}
+                  onImageLoad={handleImageLoad}
+                  loadedImages={loadedImages}
+                />
+              </div>
+            )) || []}
+          </div>
+        )}
       </section>
 
       {/* Category-wise Products */}

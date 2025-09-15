@@ -8,36 +8,33 @@ import ProfileScreen from './components/ProfileScreen';
 import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import AdminDashboard from './components/AdminDashboard';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import './App.css';
 
-function App() {
+function AppContent() {
+
   const [currentScreen, setCurrentScreen] = useState('login');
   const [cartItems, setCartItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, loading: authLoading, logout } = useAuth();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  // Check for existing user session and simulate app loading
+  // Handle screen navigation based on user state
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const savedUser = localStorage.getItem('KwikMart_user');
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        // Check if user is admin
-        if (userData.email === 'admin@123.com') {
+    if (!authLoading) {
+      if (user) {
+        if (user.email === 'admin@123.com') {
           setCurrentScreen('admin');
         } else {
           setCurrentScreen('home');
         }
+      } else {
+        setCurrentScreen('login');
       }
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    }
+  }, [user, authLoading]);
 
   // reduce methoda is used to iterate through the cartitems arrayy
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -106,38 +103,8 @@ function App() {
     setCurrentScreen(screen);
   };
 
-  const handleLogin = (userData) => {
-    // Add join date if not present (for existing users)
-    const completeUserData = {
-      ...userData,
-      joinDate: userData.joinDate || 'January 2024',
-      avatar: userData.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
-    };
-    setUser(completeUserData);
-    localStorage.setItem('KwikMart_user', JSON.stringify(completeUserData));
-    // Check if user is admin
-    if (userData.email === 'admin@123.com') {
-      setCurrentScreen('admin');
-    } else {
-      setCurrentScreen('home');
-    }
-  };
-
-  const handleRegister = (userData) => {
-    // Add join date and avatar for new users
-    const completeUserData = {
-      ...userData,
-      joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
-    };
-    setUser(completeUserData);
-    localStorage.setItem('KwikMart_user', JSON.stringify(completeUserData));
-    setCurrentScreen('home');
-  };
-
   const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('KwikMart_user');
+    logout();
     setCurrentScreen('login');
   };
 
@@ -156,14 +123,12 @@ function App() {
           return (
             <RegisterScreen
               onNavigate={handleNavigate}
-              onRegister={handleRegister}
             />
           );
         default:
           return (
             <LoginScreen
               onNavigate={handleNavigate}
-              onLogin={handleLogin}
             />
           );
       }
@@ -241,7 +206,7 @@ function App() {
     }
   };
 
-  if (isLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -278,6 +243,14 @@ function App() {
         />
       )}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

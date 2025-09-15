@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Filter, Search, Heart, Star, Plus, Grid, List } from 'lucide-react';
 import { formatPriceShort } from '../utils/currency';
+import { productsAPI } from '../services/api';
+import { useApi } from '../hooks/useApi';
 
 const ProductListScreen = ({ onNavigate, onAddToCart, wishlistItems, onToggleWishlist, searchQuery: initialSearchQuery = '', isMobile }) => {
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('name');
@@ -12,136 +12,30 @@ const ProductListScreen = ({ onNavigate, onAddToCart, wishlistItems, onToggleWis
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [selectedRating, setSelectedRating] = useState(0);
+  
+  // Fetch products from API
+  const { data: products, loading: productsLoading, error: productsError, refetch } = useApi(
+    () => productsAPI.getAll(
+      selectedCategory !== 'all' ? selectedCategory : null,
+      searchQuery || null,
+      100
+    ),
+    [selectedCategory, searchQuery]
+  );
+  
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   const categories = [
     { id: 'all', name: 'All Products' },
-    { id: 'fruits', name: 'Fruits & Vegetables' },
-    { id: 'dairy', name: 'Dairy & Bakery' },
-    { id: 'snacks', name: 'Snacks & Beverages' },
-    { id: 'beauty', name: 'Beauty & Personal Care' },
-    { id: 'electronics', name: 'Electronics' },
-    { id: 'home', name: 'Home & Kitchen' },
+    { id: 'Fruits & Vegetables', name: 'Fruits & Vegetables' },
+    { id: 'Dairy & Bakery', name: 'Dairy & Bakery' },
+    { id: 'Snacks & Beverages', name: 'Snacks & Beverages' },
+    { id: 'Beauty & Personal Care', name: 'Beauty & Personal Care' },
+    { id: 'Electronics', name: 'Electronics' },
+    { id: 'Home & Kitchen', name: 'Home & Kitchen' },
   ];
 
-  const allProducts = [
-    {
-      id: 1,
-      name: 'Fresh Red Apples',
-      price: 120,
-      originalPrice: 160,
-      image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300',
-      rating: 4.5,
-      category: 'fruits',
-      isVeg: true,
-      packSize: '1 kg Pack',
-      discount: 25,
-      badge: 'Fresh',
-      description: 'Crisp and sweet red apples, perfect for snacking or cooking.'
-    },
-    {
-      id: 2,
-      name: 'Organic Carrots',
-      price: 80,
-      image: 'https://images.unsplash.com/photo-1445282768818-728615cc910a?w=300',
-      rating: 4.8,
-      category: 'fruits',
-      isVeg: true,
-      packSize: '500g Pack',
-      badge: 'Organic',
-      description: 'Fresh organic carrots, rich in vitamins and minerals.'
-    },
-    {
-      id: 3,
-      name: 'Fresh Milk',
-      price: 65,
-      image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300',
-      rating: 4.3,
-      category: 'dairy',
-      isVeg: true,
-      packSize: '1L Pack',
-      badge: 'Farm Fresh',
-      description: 'Pure and fresh milk from local farms.'
-    },
-    {
-      id: 4,
-      name: 'Premium Basmati Rice',
-      price: 350,
-      image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300',
-      rating: 4.7,
-      category: 'home',
-      isVeg: true,
-      packSize: '5kg Pack',
-      badge: 'Premium',
-      description: 'Long grain basmati rice with authentic aroma and taste.'
-    },
-    {
-      id: 5,
-      name: 'Mixed Dry Fruits',
-      price: 299,
-      originalPrice: 399,
-      image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300',
-      rating: 4.6,
-      category: 'snacks',
-      isVeg: true,
-      packSize: '250g Pack',
-      discount: 25,
-      badge: 'Bestseller',
-      description: 'Premium quality mixed dry fruits for healthy snacking.'
-    },
-    {
-      id: 6,
-      name: 'Whole Wheat Bread',
-      price: 45,
-      image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300',
-      rating: 4.4,
-      category: 'dairy',
-      isVeg: true,
-      packSize: '1 Loaf',
-      badge: 'Fresh',
-      description: 'Soft and nutritious whole wheat bread, baked fresh daily.'
-    },
-    {
-      id: 7,
-      name: 'Organic Bananas',
-      price: 60,
-      image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300',
-      rating: 4.2,
-      category: 'fruits',
-      isVeg: true,
-      packSize: '1 Dozen',
-      badge: 'Organic',
-      description: 'Sweet and ripe organic bananas, rich in potassium.'
-    },
-    {
-      id: 9,
-      name: 'Fresh Bananas',
-      price: 40,
-      image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300',
-      rating: 4.0,
-      category: 'fruits',
-      isVeg: true,
-      packSize: '1 kg',
-      badge: 'Fresh',
-      description: 'Fresh yellow bananas, perfect for snacking.'
-    },
-    {
-      id: 8,
-      name: 'Greek Yogurt',
-      price: 85,
-      image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=300',
-      rating: 4.5,
-      category: 'dairy',
-      isVeg: true,
-      packSize: '200g Cup',
-      badge: 'Protein Rich',
-      description: 'Thick and creamy Greek yogurt, high in protein.'
-    },
-  ];
 
-  useEffect(() => {
-    setProducts(allProducts);
-    setFilteredProducts(allProducts);
-  }, []);
 
   // Update search query when prop changes
   useEffect(() => {
@@ -149,48 +43,30 @@ const ProductListScreen = ({ onNavigate, onAddToCart, wishlistItems, onToggleWis
   }, [initialSearchQuery]);
 
   useEffect(() => {
-    let filtered = products;
+    if (products) {
+      let filtered = [...products];
 
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+      // Filter by price range
+      filtered = filtered.filter(product => 
+        product.price >= priceRange[0] && product.price <= priceRange[1]
       );
+
+      // Sort products
+      filtered.sort((a, b) => {
+        switch (sortBy) {
+          case 'price-low':
+            return a.price - b.price;
+          case 'price-high':
+            return b.price - a.price;
+          case 'name':
+          default:
+            return a.name.localeCompare(b.name);
+        }
+      });
+
+      setFilteredProducts(filtered);
     }
-
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-
-    // Filter by price range
-    filtered = filtered.filter(product => 
-      product.price >= priceRange[0] && product.price <= priceRange[1]
-    );
-
-    // Filter by rating
-    if (selectedRating > 0) {
-      filtered = filtered.filter(product => product.rating >= selectedRating);
-    }
-
-    // Sort products
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'rating':
-          return b.rating - a.rating;
-        case 'name':
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
-
-    setFilteredProducts(filtered);
-  }, [products, searchQuery, selectedCategory, sortBy, priceRange, selectedRating]);
+  }, [products, sortBy, priceRange]);
 
   const isInWishlist = (productId) => {
     return wishlistItems.some(item => item.id === productId);
@@ -241,14 +117,14 @@ const ProductListScreen = ({ onNavigate, onAddToCart, wishlistItems, onToggleWis
           <h3 className={`font-semibold text-gray-800 ${viewMode === 'list' ? 'text-base' : 'text-sm'} line-clamp-2 flex-1`}>
             {product.name}
           </h3>
-          {product.isVeg && (
+          {(product.is_veg || product.isVeg) && (
             <div className="ml-2 w-4 h-4 border-2 border-green-600 rounded-sm flex items-center justify-center">
               <div className="w-2 h-2 bg-green-600 rounded-full"></div>
             </div>
           )}
         </div>
 
-        <p className="text-xs text-gray-500 mb-2">{product.packSize}</p>
+        <p className="text-xs text-gray-500 mb-2">{product.pack_size || product.packSize}</p>
 
         {viewMode === 'list' && (
           <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
@@ -259,9 +135,9 @@ const ProductListScreen = ({ onNavigate, onAddToCart, wishlistItems, onToggleWis
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <span className="font-bold text-gray-800">{formatPriceShort(product.price)}</span>
-            {product.originalPrice && (
+            {(product.original_price || product.originalPrice) && (
               <span className="text-xs text-gray-500 line-through">
-                {formatPriceShort(product.originalPrice)}
+                {formatPriceShort(product.original_price || product.originalPrice)}
               </span>
             )}
           </div>
@@ -400,7 +276,38 @@ const ProductListScreen = ({ onNavigate, onAddToCart, wishlistItems, onToggleWis
           </p>
         </div>
 
-        {filteredProducts.length === 0 ? (
+        {productsLoading ? (
+          <div className={`grid gap-4 ${
+            viewMode === 'grid' 
+              ? isMobile ? 'grid-cols-2' : 'grid-cols-4' 
+              : 'grid-cols-1'
+          }`}>
+            {[...Array(8)].map((_, index) => (
+              <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
+                <div className="aspect-square bg-gray-200"></div>
+                <div className="p-4">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : productsError ? (
+          <div className="text-center py-12">
+            <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-12 h-12 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Failed to load products</h3>
+            <p className="text-gray-600 mb-4">{productsError}</p>
+            <button 
+              onClick={refetch}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-12 h-12 text-gray-400" />

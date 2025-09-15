@@ -1,24 +1,35 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-const LoginScreen = ({ onNavigate, onLogin }) => {
+const LoginScreen = ({ onNavigate }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // Simulate login
-    setTimeout(() => {
-      onLogin(formData);
-      onNavigate('home');
+    try {
+      const result = await login(formData.email, formData.password);
+      
+      if (result.success) {
+        // Navigation will be handled by App.js based on user state
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleChange = (e) => {
@@ -40,6 +51,11 @@ const LoginScreen = ({ onNavigate, onLogin }) => {
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome Back!</h2>
               <p className="text-gray-600">Sign in to your account</p>
+              {error && (
+                <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">

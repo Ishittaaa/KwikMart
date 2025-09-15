@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-const RegisterScreen = ({ onNavigate, onRegister }) => {
+const RegisterScreen = ({ onNavigate }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -12,23 +13,45 @@ const RegisterScreen = ({ onNavigate, onRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { register } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submitted with data:', formData);
+    setError('');
     
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
 
     setIsLoading(true);
+    console.log('Starting registration...');
     
-    // Simulate registration
-    setTimeout(() => {
-      onRegister(formData);
-      onNavigate('home');
+    try {
+      const result = await register(
+        formData.name,
+        formData.email,
+        formData.phone,
+        formData.password
+      );
+      
+      console.log('Registration result:', result);
+      
+      if (result.success) {
+        console.log('Registration successful, user should be redirected');
+        // Navigation will be handled by App.js based on user state
+      } else {
+        console.log('Registration failed:', result.error);
+        setError(result.error);
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      setError('Registration failed. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleChange = (e) => {
@@ -55,7 +78,12 @@ const RegisterScreen = ({ onNavigate, onRegister }) => {
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Create Account</h2>
-              <p className="text-gray-600">Join QuickMart today</p>
+              <p className="text-gray-600">Join KwikMart today</p>
+              {error && (
+                <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
