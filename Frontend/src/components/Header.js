@@ -23,7 +23,7 @@ const Header = ({ currentScreen, onNavigate, cartCount, user, onSearch, isMobile
                 <span className="text-white font-bold text-sm">Q</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-800">QuickMart</h1>
+                <h1 className="text-lg font-bold text-gray-800">KwikMart</h1>
                 <div className="flex items-center text-xs text-gray-500">
                   <MapPin className="w-3 h-3 mr-1" />
                   <span>Deliver to Home</span>
@@ -82,7 +82,7 @@ const Header = ({ currentScreen, onNavigate, cartCount, user, onSearch, isMobile
               <h3 className="font-semibold text-gray-800 mb-2">Notifications</h3>
               <div className="space-y-2">
                 <div className="p-3 bg-primary-50 rounded-lg">
-                  <p className="text-sm text-gray-700">🎉 Welcome to QuickMart! Get 20% off on your first order.</p>
+                  <p className="text-sm text-gray-700">🎉 Welcome to KwikMart! Get 20% off on your first order.</p>
                 </div>
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-gray-700">📦 Your order #1234 is out for delivery!</p>
@@ -107,7 +107,7 @@ const Header = ({ currentScreen, onNavigate, cartCount, user, onSearch, isMobile
                 <span className="text-white font-bold text-lg">Q</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">QuickMart</h1>
+                <h1 className="text-xl font-bold text-gray-800">KwikMart</h1>
                 <div className="flex items-center text-sm text-gray-500">
                   <MapPin className="w-4 h-4 mr-1" />
                   <span>Deliver to 123 Main St, Your City</span>

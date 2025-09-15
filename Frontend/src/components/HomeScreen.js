@@ -1,6 +1,87 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Heart, Plus, RotateCcw } from 'lucide-react';
 import { formatPriceShort } from '../utils/currency';
+
+// Move ProductCard outside to prevent re-rendering
+const ProductCard = React.memo(({ product, showAnimation = true, isInWishlist, onToggleWishlist, onAddToCart, onImageLoad, loadedImages }) => (
+  <div className={`bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${showAnimation ? 'animate-slide-up' : ''}`}>
+    <div className="relative aspect-square overflow-hidden">
+      <img
+        src={product.image}
+        alt={product.name}
+        className={`w-full h-full object-cover transition-all duration-300 hover:scale-105 ${
+          loadedImages.has(product.id) ? 'opacity-100' : 'opacity-0'
+        }`}
+        onLoad={() => onImageLoad(product.id)}
+      />
+      {!loadedImages.has(product.id) && (
+        <div className="absolute inset-0 bg-gray-200 shimmer"></div>
+      )}
+      
+      {/* Badges */}
+      <div className="absolute top-3 left-3 flex flex-col gap-1">
+        {product.badge && (
+          <span className="px-2 py-1 bg-primary-600 text-white text-xs font-medium rounded-full">
+            {product.badge}
+          </span>
+        )}
+        {product.discount && (
+          <span className="px-2 py-1 bg-red-500 text-white text-xs font-medium rounded-full">
+            {product.discount}% OFF
+          </span>
+        )}
+      </div>
+
+      {/* Wishlist button */}
+      <button
+        onClick={() => onToggleWishlist(product)}
+        className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-all duration-200 hover:scale-110"
+      >
+        <Heart
+          className={`w-4 h-4 transition-colors ${
+            isInWishlist
+              ? 'fill-red-500 text-red-500'
+              : 'text-gray-600 hover:text-red-500'
+          }`}
+        />
+      </button>
+
+      {/* Quick add button */}
+      <button
+        onClick={() => onAddToCart(product)}
+        className="absolute bottom-3 right-3 p-2 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 transition-all duration-200 hover:scale-110 btn-hover"
+      >
+        <Plus className="w-4 h-4" />
+      </button>
+    </div>
+
+    <div className="p-4">
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 flex-1">
+          {product.name}
+        </h3>
+        {product.isVeg && (
+          <div className="ml-2 w-4 h-4 border-2 border-green-600 rounded-sm flex items-center justify-center">
+            <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+          </div>
+        )}
+      </div>
+
+      <p className="text-xs text-gray-500 mb-2">{product.packSize}</p>
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <span className="font-bold text-gray-800">{formatPriceShort(product.price)}</span>
+          {product.originalPrice && (
+            <span className="text-xs text-gray-500 line-through">
+              {formatPriceShort(product.originalPrice)}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+));
 
 const HomeScreen = ({ onNavigate, cartCount, onAddToCart, wishlistItems, onToggleWishlist, isMobile }) => {
   const [currentDealIndex, setCurrentDealIndex] = useState(0);
@@ -165,95 +246,13 @@ const HomeScreen = ({ onNavigate, cartCount, onAddToCart, wishlistItems, onToggl
     return () => clearInterval(timer);
   }, [dailyDeals.length]);
 
-  const isInWishlist = (productId) => {
+  const isInWishlist = useCallback((productId) => {
     return wishlistItems.some(item => item.id === productId);
-  };
+  }, [wishlistItems]);
 
-  const handleImageLoad = (productId) => {
+  const handleImageLoad = useCallback((productId) => {
     setLoadedImages(prev => new Set([...prev, productId]));
-  };
-
-  const ProductCard = ({ product, showAnimation = true }) => (
-    <div className={`bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${showAnimation ? 'animate-slide-up' : ''}`}>
-      <div className="relative aspect-square overflow-hidden">
-        <img
-          src={product.image}
-          alt={product.name}
-          className={`w-full h-full object-cover transition-all duration-300 hover:scale-105 ${
-            loadedImages.has(product.id) ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={() => handleImageLoad(product.id)}
-        />
-        {!loadedImages.has(product.id) && (
-          <div className="absolute inset-0 bg-gray-200 shimmer"></div>
-        )}
-        
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1">
-          {product.badge && (
-            <span className="px-2 py-1 bg-primary-600 text-white text-xs font-medium rounded-full">
-              {product.badge}
-            </span>
-          )}
-          {product.discount && (
-            <span className="px-2 py-1 bg-red-500 text-white text-xs font-medium rounded-full">
-              {product.discount}% OFF
-            </span>
-          )}
-        </div>
-
-        {/* Wishlist button */}
-        <button
-          onClick={() => onToggleWishlist(product)}
-          className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-all duration-200 hover:scale-110"
-        >
-          <Heart
-            className={`w-4 h-4 transition-colors ${
-              isInWishlist(product.id)
-                ? 'fill-red-500 text-red-500'
-                : 'text-gray-600 hover:text-red-500'
-            }`}
-          />
-        </button>
-
-        {/* Quick add button */}
-        <button
-          onClick={() => onAddToCart(product)}
-          className="absolute bottom-3 right-3 p-2 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 transition-all duration-200 hover:scale-110 btn-hover"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-gray-800 text-sm line-clamp-2 flex-1">
-            {product.name}
-          </h3>
-          {product.isVeg && (
-            <div className="ml-2 w-4 h-4 border-2 border-green-600 rounded-sm flex items-center justify-center">
-              <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-            </div>
-          )}
-        </div>
-
-        <p className="text-xs text-gray-500 mb-2">{product.packSize}</p>
-
-
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-gray-800">{formatPriceShort(product.price)}</span>
-            {product.originalPrice && (
-              <span className="text-xs text-gray-500 line-through">
-                {formatPriceShort(product.originalPrice)}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  }, []);
 
   return (
     <div className={`min-h-screen bg-gray-50 ${isMobile ? 'pb-20' : ''}`}>
@@ -413,7 +412,14 @@ const HomeScreen = ({ onNavigate, cartCount, onAddToCart, wishlistItems, onToggl
         <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-6'} gap-4`}>
           {featuredProducts.map((product, index) => (
             <div key={product.id} style={{ animationDelay: `${index * 100}ms` }}>
-              <ProductCard product={product} />
+              <ProductCard 
+                product={product} 
+                isInWishlist={isInWishlist(product.id)}
+                onToggleWishlist={onToggleWishlist}
+                onAddToCart={onAddToCart}
+                onImageLoad={handleImageLoad}
+                loadedImages={loadedImages}
+              />
             </div>
           ))}
         </div>
@@ -435,7 +441,15 @@ const HomeScreen = ({ onNavigate, cartCount, onAddToCart, wishlistItems, onToggl
           <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
             {products.map((product) => (
               <div key={product.id} className="min-w-[160px]">
-                <ProductCard product={product} showAnimation={false} />
+                <ProductCard 
+                  product={product} 
+                  showAnimation={false}
+                  isInWishlist={isInWishlist(product.id)}
+                  onToggleWishlist={onToggleWishlist}
+                  onAddToCart={onAddToCart}
+                  onImageLoad={handleImageLoad}
+                  loadedImages={loadedImages}
+                />
               </div>
             ))}
           </div>

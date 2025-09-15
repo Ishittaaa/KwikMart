@@ -430,7 +430,7 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
                 <Menu className="w-6 h-6 text-gray-600" />
               </button>
               <div>
-                <h1 className="text-lg font-bold text-gray-800">QuickMart Admin</h1>
+                <h1 className="text-lg font-bold text-gray-800">KwikMart Admin</h1>
               </div>
             </div>
             <div className="flex items-center space-x-2">

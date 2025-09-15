@@ -23,12 +23,12 @@ function App() {
   // Check for existing user session and simulate app loading
   useEffect(() => {
     const timer = setTimeout(() => {
-      const savedUser = localStorage.getItem('quickmart_user');
+      const savedUser = localStorage.getItem('KwikMart_user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
         setUser(userData);
         // Check if user is admin
-        if (userData.email === 'admin@quickmart.com') {
+        if (userData.email === 'admin@123.com') {
           setCurrentScreen('admin');
         } else {
           setCurrentScreen('home');
@@ -39,8 +39,12 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // reduce methoda is used to iterate through the cartitems arrayy
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  // firstly checks if the product already exists in the cart
+  // if it does, it increments the quantity
+  // if not, it adds the product with quantity 1
   const handleAddToCart = (product) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
@@ -73,7 +77,12 @@ function App() {
       );
     }
   };
+//   item.id === id ? - Checks if current item matches the ID we want to update
+// { ...item, quantity } - If it matches: Spreads all existing item properties (...item) & Overwrites the quantity with the new value
+// : item - If it doesn't match: Returns the item unchanged
 
+
+  // filter method is used to create a new array excluding the item with the specified id
   const handleRemoveItem = (id) => {
     setCartItems(prevItems => prevItems.filter(item => item.id !== id));
   };
@@ -98,10 +107,16 @@ function App() {
   };
 
   const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem('quickmart_user', JSON.stringify(userData));
+    // Add join date if not present (for existing users)
+    const completeUserData = {
+      ...userData,
+      joinDate: userData.joinDate || 'January 2024',
+      avatar: userData.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
+    };
+    setUser(completeUserData);
+    localStorage.setItem('KwikMart_user', JSON.stringify(completeUserData));
     // Check if user is admin
-    if (userData.email === 'admin@quickmart.com') {
+    if (userData.email === 'admin@123.com') {
       setCurrentScreen('admin');
     } else {
       setCurrentScreen('home');
@@ -109,21 +124,27 @@ function App() {
   };
 
   const handleRegister = (userData) => {
-    setUser(userData);
-    localStorage.setItem('quickmart_user', JSON.stringify(userData));
+    // Add join date and avatar for new users
+    const completeUserData = {
+      ...userData,
+      joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
+    };
+    setUser(completeUserData);
+    localStorage.setItem('KwikMart_user', JSON.stringify(completeUserData));
     setCurrentScreen('home');
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('quickmart_user');
+    localStorage.removeItem('KwikMart_user');
     setCurrentScreen('login');
   };
 
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.trim()) {
-      setCurrentScreen('products');
+      setCurrentScreen('products'); 
     }
   };
 
@@ -149,7 +170,7 @@ function App() {
     }
 
     // If user is admin, show admin dashboard
-    if (user.email === 'admin@quickmart.com') {
+    if (user.email === 'admin@123.com') {
       return (
         <AdminDashboard
           onNavigate={handleNavigate}
@@ -225,7 +246,7 @@ function App() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">QuickMart</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">KwikMart</h2>
           <p className="text-gray-600">Loading your shopping experience...</p>
         </div>
       </div>
@@ -234,7 +255,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {user && user.email !== 'admin@quickmart.com' && (
+      {user && user.email !== 'admin@123.com' && (
         <Header 
           currentScreen={currentScreen}
           onNavigate={handleNavigate}
@@ -245,11 +266,11 @@ function App() {
         />
       )}
       
-      <main className={`${isMobile && user && user.email !== 'admin@quickmart.com' ? 'pb-20' : user && user.email === 'admin@quickmart.com' ? '' : 'pt-4'} transition-all duration-300`}>
+      <main className={`${isMobile && user && user.email !== 'admin@123.com' ? 'pb-20' : user && user.email === 'admin@123.com' ? '' : 'pt-4'} transition-all duration-300`}>
         {renderCurrentScreen()}
       </main>
 
-      {isMobile && user && user.email !== 'admin@quickmart.com' && (
+      {isMobile && user && user.email !== 'admin@123.com' && (
         <Navigation
           currentScreen={currentScreen}
           onNavigate={handleNavigate}

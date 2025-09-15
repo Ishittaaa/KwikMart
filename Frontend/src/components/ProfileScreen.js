@@ -21,11 +21,11 @@ const ProfileScreen = ({ onNavigate, wishlistItems, onRemoveFromWishlist, onAddT
   const [activeTab, setActiveTab] = useState('profile');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [userProfile, setUserProfile] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+91 9876543210',
-    joinDate: 'January 2024',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
+    name: user?.name || user?.email?.split('@')[0] || 'User',
+    email: user?.email || '',
+    phone: user?.phone || '+91 9876543210',
+    joinDate: user?.joinDate || 'January 2024',
+    avatar: user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
   });
 
   const orderHistory = [
@@ -131,29 +131,29 @@ const ProfileScreen = ({ onNavigate, wishlistItems, onRemoveFromWishlist, onAddT
               <div className="flex items-center space-x-4 mb-6">
                 <div className="w-20 h-20 bg-gray-200 rounded-full overflow-hidden">
                   <img
-                    src={userProfile.avatar}
-                    alt={userProfile.name}
+                    src={user?.avatar || userProfile.avatar}
+                    alt={user?.name || userProfile.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">{userProfile.name}</h3>
-                  <p className="text-gray-600">Member since {userProfile.joinDate}</p>
+                  <h3 className="text-xl font-bold text-gray-800">{user?.name || user?.email?.split('@')[0] || 'User'}</h3>
+                  <p className="text-gray-600">Member since {user?.joinDate || 'January 2024'}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <Mail className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-700">{userProfile.email}</span>
+                  <span className="text-gray-700">{user?.email || 'Not provided'}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Phone className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-700">{userProfile.phone}</span>
+                  <span className="text-gray-700">{user?.phone || 'Not provided'}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Calendar className="w-5 h-5 text-gray-400" />
-                  <span className="text-gray-700">Joined {userProfile.joinDate}</span>
+                  <span className="text-gray-700">Joined {user?.joinDate || 'January 2024'}</span>
                 </div>
               </div>
             </div>
