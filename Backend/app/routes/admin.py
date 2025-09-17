@@ -198,3 +198,82 @@ async def delete_product(product_id: str, current_user: dict = Depends(get_curre
         return {"message": "Product deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid product ID")
+
+@router.get("/orders/recent")
+async def get_recent_orders(current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Get recent orders with user lookup
+        pipeline = [
+            {"$sort": {"created_at": -1}},
+            {"$limit": 10},
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id",
+                    "foreignField": "_id",
+                    "as": "user_info"
+                }
+            }
+        ]
+        
+        cursor = orders_collection.aggregate(pipeline)
+        orders = await cursor.to_list(length=10)
+        
+        # Format orders data
+        formatted_orders = []
+        for order in orders:
+            # Get customer name from lookup
+            customer_name = "Unknown Customer"
+            if order.get("user_info") and len(order["user_info"]) > 0:
+                customer_name = order["user_info"][0].get("name", "Unknown Customer")
+            
+            # Format creation time in readable format
+            created_at = order.get("created_at")
+            if created_at:
+                time_str = created_at.strftime("%b %d, %Y at %I:%M %p")
+            else:
+                time_str = "Unknown"
+            
+            formatted_order = {
+                "id": str(order["_id"]),
+                "order_id": order.get("order_id", "N/A"),
+                "customer": customer_name,
+                "total": order.get("total_amount", 0),
+                "status": order.get("status", "pending"),
+                "items_count": len(order.get("items", [])),
+                "time": time_str
+            }
+            formatted_orders.append(formatted_order)
+        
+        return formatted_orders
+    except Exception as e:
+        # Return empty list if there's an error
+        return []
+
+@router.patch("/orders/{order_id}/status")
+async def update_order_status(order_id: str, status: str, current_user: dict = Depends(get_current_user)):
+    """Update order status - Teaching: PATCH is used for partial updates"""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Valid status options - Teaching: Always validate input
+    valid_statuses = ["pending", "processing", "shipped", "delivered", "cancelled"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    try:
+        # Update order in database - Teaching: Use ObjectId for MongoDB
+        result = await orders_collection.update_one(
+            {"_id": ObjectId(order_id)},
+            {"$set": {"status": status, "updated_at": datetime.now()}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Order not found")
+        
+        return {"message": "Order status updated successfully", "status": status}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid order ID")

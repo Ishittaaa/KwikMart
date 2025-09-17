@@ -16,6 +16,8 @@ import {
   Trash2
 } from 'lucide-react';
 import { formatPriceShort } from '../utils/currency';
+import { ordersAPI } from '../services/api';
+import { useApi } from '../hooks/useApi';
 
 const ProfileScreen = ({ onNavigate, wishlistItems, onRemoveFromWishlist, onAddToCart, user, onLogout, isMobile }) => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -28,32 +30,13 @@ const ProfileScreen = ({ onNavigate, wishlistItems, onRemoveFromWishlist, onAddT
     avatar: user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
   });
 
-  const orderHistory = [
-    {
-      id: '#ORD001',
-      date: '2024-01-15',
-      items: 5,
-      total: 450,
-      status: 'Delivered',
-      statusColor: 'text-green-600 bg-green-100'
-    },
-    {
-      id: '#ORD002',
-      date: '2024-01-10',
-      items: 3,
-      total: 280,
-      status: 'Delivered',
-      statusColor: 'text-green-600 bg-green-100'
-    },
-    {
-      id: '#ORD003',
-      date: '2024-01-05',
-      items: 7,
-      total: 650,
-      status: 'Cancelled',
-      statusColor: 'text-red-600 bg-red-100'
-    }
-  ];
+  // Fetch user orders from API
+  const { data: userOrders, loading: ordersLoading } = useApi(
+    () => ordersAPI.getUserOrders(),
+    [activeTab === 'orders']
+  );
+  
+  const orderHistory = userOrders || [];
 
   const addresses = [
     {
@@ -206,23 +189,54 @@ const ProfileScreen = ({ onNavigate, wishlistItems, onRemoveFromWishlist, onAddT
         return (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-800">Order History</h2>
-            {orderHistory.map((order) => (
-              <div key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{order.id}</h3>
-                    <p className="text-sm text-gray-600">{order.date}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.statusColor}`}>
-                    {order.status}
-                  </span>
+            {ordersLoading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600">{order.items} items</p>
-                  <p className="font-bold text-gray-800">{formatPriceShort(order.total)}</p>
+              ))
+            ) : orderHistory.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ShoppingBag className="w-12 h-12 text-gray-400" />
                 </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">No orders yet</h3>
+                <p className="text-gray-600 mb-6">Start shopping to see your orders here</p>
+                <button
+                  onClick={() => onNavigate('products')}
+                  className="px-6 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors"
+                >
+                  Start Shopping
+                </button>
               </div>
-            ))}
+            ) : (
+              orderHistory.map((order) => {
+                const statusColor = order.status === 'delivered' ? 'text-green-600 bg-green-100' :
+                                  order.status === 'processing' ? 'text-blue-600 bg-blue-100' :
+                                  order.status === 'cancelled' ? 'text-red-600 bg-red-100' :
+                                  'text-yellow-600 bg-yellow-100';
+                
+                return (
+                  <div key={order.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-800">{order.order_id}</h3>
+                        <p className="text-sm text-gray-600">{new Date(order.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+                        {order.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-600">{order.items?.length || 0} items</p>
+                      <p className="font-bold text-gray-800">{formatPriceShort(order.total_amount)}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         );
 

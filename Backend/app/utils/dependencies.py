@@ -29,4 +29,4 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 async def get_current_user_id(current_user: dict = Depends(get_current_user)) -> str:
     """Get current user ID from authenticated user"""
-    return current_user["_id"]
+    return str(current_user["_id"])

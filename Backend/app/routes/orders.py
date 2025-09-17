@@ -9,9 +9,12 @@ router = APIRouter(prefix="/orders", tags=["Orders"])
 @router.post("/", response_model=OrderResponse)
 async def create_order(order: OrderCreate, user_id: str = Depends(get_current_user_id)):
     try:
+        print(f"Creating order for user: {user_id}")
+        print(f"Order data: {order}")
         created_order = await OrderService.create_order(user_id, order)
         return created_order
     except Exception as e:
+        print(f"Order creation error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/", response_model=List[OrderResponse])

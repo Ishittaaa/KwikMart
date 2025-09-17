@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Heart, Plus, RotateCcw } from 'lucide-react';
 import { formatPriceShort } from '../utils/currency';
 import { productsAPI } from '../services/api';
@@ -89,7 +89,7 @@ const HomeScreen = ({ onNavigate, cartCount, onAddToCart, wishlistItems, onToggl
   const [currentDealIndex, setCurrentDealIndex] = useState(0);
   const [loadedImages, setLoadedImages] = useState(new Set());
   const categoryScrollRef = useRef(null);
-  const [categoryScrollPosition, setCategoryScrollPosition] = useState(0);
+
   
   // Fetch featured products from API
   const { data: featuredProducts, loading: productsLoading, error: productsError } = useApi(

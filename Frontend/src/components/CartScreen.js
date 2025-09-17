@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag, Truck, Clock, Shield, Tag } from 'lucide-react';
 import { formatPriceShort } from '../utils/currency';
+import { ordersAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
-const CartScreen = ({ onNavigate, cartItems, onUpdateQuantity, onRemoveItem, isMobile }) => {
+const CartScreen = ({ onNavigate, cartItems, onUpdateQuantity, onRemoveItem, isMobile, onClearCart }) => {
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [orderDetails, setOrderDetails] = useState(null);
+  const { user } = useAuth();
 
   const promoCodes = {
     'WELCOME20': { discount: 20, type: 'percentage', description: '20% off on first order' },
@@ -32,6 +37,56 @@ const CartScreen = ({ onNavigate, cartItems, onUpdateQuantity, onRemoveItem, isM
 
   const handleRemovePromo = () => {
     setAppliedPromo(null);
+  };
+  
+  const handleCheckout = async () => {
+    if (!user) {
+      alert('Please login to place order');
+      return;
+    }
+    
+    setIsPlacingOrder(true);
+    
+    try {
+      // Prepare order data
+      const orderData = {
+        items: cartItems.map(item => ({
+          product_id: String(item.id),
+          name: item.name,
+          price: Number(item.price),
+          quantity: Number(item.quantity),
+          image: item.image || 'https://via.placeholder.com/150'
+        })),
+        total_amount: Number(total),
+        delivery_address: {
+          street: "123 Main St",
+          city: "City",
+          state: "State",
+          pincode: "123456"
+        }
+      };
+      
+      console.log('Order data being sent:', orderData);
+      
+      // Create order via API
+      const createdOrder = await ordersAPI.createOrder(orderData);
+      
+      // Store order details for modal
+      setOrderDetails({
+        orderId: createdOrder.order_id,
+        total: total,
+        itemCount: cartItems.length
+      });
+      
+      // Show success modal first
+      setShowCheckout(true);
+      
+    } catch (error) {
+      console.error('Order creation failed:', error);
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
 
   const CartItem = ({ item }) => (
@@ -252,10 +307,11 @@ const CartScreen = ({ onNavigate, cartItems, onUpdateQuantity, onRemoveItem, isM
 
             {/* Checkout Button */}
             <button
-              onClick={() => setShowCheckout(true)}
-              className="w-full py-4 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition-colors btn-hover shadow-lg"
+              onClick={handleCheckout}
+              disabled={isPlacingOrder}
+              className="w-full py-4 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition-colors btn-hover shadow-lg disabled:opacity-50"
             >
-              Proceed to Checkout
+              {isPlacingOrder ? 'Placing Order...' : 'Proceed to Checkout'}
             </button>
 
             {/* Continue Shopping */}
@@ -269,33 +325,61 @@ const CartScreen = ({ onNavigate, cartItems, onUpdateQuantity, onRemoveItem, isM
         </div>
       </div>
 
-      {/* Checkout Modal */}
-      {showCheckout && (
+      {/* Checkout Success Modal */}
+      {showCheckout && orderDetails && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full animate-bounce-in">
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag className="w-8 h-8 text-white" />
+              <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShoppingBag className="w-10 h-10 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Order Placed!</h2>
-              <p className="text-gray-600 mb-6">
-                Your order has been placed successfully. You'll receive a confirmation shortly.
-              </p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Order Placed Successfully!</h2>
+              
+              <div className="bg-gray-50 rounded-2xl p-4 mb-4">
+                <div className="text-sm text-gray-600 mb-2">Order ID</div>
+                <div className="font-bold text-gray-800 text-lg">{orderDetails.orderId}</div>
+              </div>
+              
+              <div className="flex justify-between text-sm mb-4">
+                <span className="text-gray-600">Items:</span>
+                <span className="font-semibold">{orderDetails.itemCount}</span>
+              </div>
+              <div className="flex justify-between text-sm mb-6">
+                <span className="text-gray-600">Total:</span>
+                <span className="font-bold text-lg">{formatPriceShort(orderDetails.total)}</span>
+              </div>
+              
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-6">
+                <div className="flex items-center justify-center space-x-2 text-green-700">
+                  <Truck className="w-4 h-4" />
+                  <span className="text-sm font-medium">Will be delivered in 10-30 minutes</span>
+                </div>
+              </div>
+              
               <div className="space-y-3">
                 <button
                   onClick={() => {
+                    if (onClearCart) {
+                      onClearCart();
+                    }
                     setShowCheckout(false);
-                    onNavigate('home');
+                    onNavigate('profile'); // Navigate to profile to see orders
                   }}
                   className="w-full py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors"
                 >
-                  Continue Shopping
+                  View My Orders
                 </button>
                 <button
-                  onClick={() => setShowCheckout(false)}
+                  onClick={() => {
+                    if (onClearCart) {
+                      onClearCart();
+                    }
+                    setShowCheckout(false);
+                    onNavigate('home');
+                  }}
                   className="w-full py-3 border border-gray-300 text-gray-600 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
                 >
-                  Close
+                  Continue Shopping
                 </button>
               </div>
             </div>

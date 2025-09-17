@@ -1,10 +1,11 @@
 import React from 'react';
-import { Home, Search, ShoppingCart, User, Grid3X3 } from 'lucide-react';
+import { Home, ShoppingCart, User, Grid3X3, Heart } from 'lucide-react';
 
 const Navigation = ({ currentScreen, onNavigate, cartCount }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'products', icon: Grid3X3, label: 'Categories' },
+    { id: 'wishlist', icon: Heart, label: 'Wishlist' },
     { id: 'cart', icon: ShoppingCart, label: 'Cart', badge: cartCount },
     { id: 'profile', icon: User, label: 'Profile' },
   ];

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ShoppingCart, MapPin, User, Menu, Bell } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, User, Bell, Heart } from 'lucide-react';
 
 const Header = ({ currentScreen, onNavigate, cartCount, user, onSearch, isMobile }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,6 +39,15 @@ const Header = ({ currentScreen, onNavigate, cartCount, user, onSearch, isMobile
                 <Bell className="w-5 h-5" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
               </button>
+              
+              {user && (
+                <button 
+                  className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+                  onClick={() => onNavigate('wishlist')}
+                >
+                  <Heart className="w-5 h-5" />
+                </button>
+              )}
               
               {user ? (
                 <button 
@@ -143,6 +152,15 @@ const Header = ({ currentScreen, onNavigate, cartCount, user, onSearch, isMobile
               <Bell className="w-6 h-6" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
             </button>
+            
+            {user && (
+              <button 
+                className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+                onClick={() => onNavigate('wishlist')}
+              >
+                <Heart className="w-6 h-6" />
+              </button>
+            )}
 
             <button
               onClick={() => onNavigate('cart')}

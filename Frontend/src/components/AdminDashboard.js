@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   BarChart3, 
   Package, 
   Users, 
   ShoppingCart, 
-  TrendingUp, 
   AlertTriangle,
   Eye,
   Edit,
@@ -35,6 +34,8 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const isMobile = useMediaQuery('(max-width: 768px)');
   
   // Fetch admin statistics from API
@@ -50,23 +51,43 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
   );
   
   // Fetch products data
-  const { data: productsData, loading: productsLoading } = useApi(
+  const { data: productsData } = useApi(
     () => adminAPI.getProducts(),
     [activeTab === 'products']
   );
+  
+  // Fetch recent orders data
+  const { data: recentOrdersData, loading: ordersLoading } = useApi(
+    () => adminAPI.getRecentOrders(),
+    [activeTab === 'dashboard']
+  );
 
-  const recentOrders = [
-    { id: '#ORD001', customer: 'John Doe', items: 3, total: 450, status: 'Pending', time: '2 mins ago' },
-    { id: '#ORD002', customer: 'Jane Smith', items: 5, total: 680, status: 'Processing', time: '5 mins ago' },
-    { id: '#ORD003', customer: 'Mike Johnson', items: 2, total: 320, status: 'Delivered', time: '10 mins ago' },
-    { id: '#ORD004', customer: 'Sarah Wilson', items: 4, total: 590, status: 'Pending', time: '15 mins ago' }
-  ];
+
 
 
 
   // Use real data or fallback to empty array
   const users = usersData || [];
   const products = productsData || [];
+  const recentOrders = recentOrdersData || [];
+  
+  // Teaching: Combine standard categories with existing ones
+  const standardCategories = [
+    "Fruits & Vegetables",
+    "Dairy & Bakery", 
+    "Snacks & Beverages",
+    "Beauty & Personal Care",
+    "Electronics",
+    "Home & Kitchen",
+    "Fashion & Clothing",
+    "Sports & Fitness",
+    "Books & Stationery",
+    "Baby & Kids"
+  ];
+  
+  const existingCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
+  const allCategories = [...new Set([...standardCategories, ...existingCategories])];
+  const existingPackSizes = [...new Set(products.map(p => p.pack_size).filter(Boolean))];
   
   // CRUD Handlers
   const handleAddUser = () => {
@@ -100,6 +121,18 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
       stock: '', image: '', is_veg: true, description: '' 
     });
     setShowModal(true);
+  };
+  
+  // Teaching: Function to update order status
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await adminAPI.updateOrderStatus(orderId, newStatus);
+      setShowOrderDetails(false);
+      // Refresh orders - Teaching: Simple page reload for now
+      window.location.reload();
+    } catch (error) {
+      alert('Failed to update order status');
+    }
   };
   
   const handleEditProduct = (product) => {
@@ -147,9 +180,19 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
       setLoading(false);
     }
   };
+  
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
+    setShowOrderDetails(true);
+  };
 
-  const StatCard = ({ title, value, icon: Icon, color, trend, trendDirection }) => (
-    <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+  const StatCard = ({ title, value, icon: Icon, color, trend, trendDirection, onClick }) => (
+    <div 
+      onClick={onClick}
+      className={`bg-white rounded-2xl p-4 md:p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
+        onClick ? 'cursor-pointer hover:border-primary-200' : ''
+      }`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-xs md:text-sm text-gray-600 mb-1 font-medium">{title}</p>
@@ -219,12 +262,14 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
               value={stats?.total_users || 0} 
               icon={Users} 
               color="bg-gradient-to-r from-green-500 to-green-600"
+              onClick={() => setActiveTab('users')}
             />
             <StatCard 
               title="Total Products" 
               value={stats?.total_products || 0} 
               icon={Package} 
               color="bg-gradient-to-r from-purple-500 to-purple-600"
+              onClick={() => setActiveTab('products')}
             />
             <StatCard 
               title="Revenue" 
@@ -270,25 +315,44 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
         
         {/* Mobile Cards View */}
         <div className="md:hidden">
-          {recentOrders.map((order) => (
-            <div key={order.id} className="p-4 border-b border-gray-100 last:border-b-0">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-gray-800">{order.id}</span>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                  order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {order.status}
-                </span>
+          {ordersLoading ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="p-4 border-b border-gray-100 animate-pulse">
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
               </div>
-              <p className="text-sm text-gray-600 mb-1">{order.customer}</p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">{order.items} items • {order.time}</span>
-                <span className="font-bold text-gray-800">{formatPriceShort(order.total)}</span>
-              </div>
+            ))
+          ) : recentOrders.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>No recent orders found</p>
             </div>
-          ))}
+          ) : (
+            recentOrders.map((order) => (
+              <div 
+                key={order.id} 
+                onClick={() => handleOrderClick(order)}
+                className="p-4 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-gray-800">{order.order_id}</span>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                    order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {order.status}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-1">{order.customer}</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">{order.items_count} items • {order.time}</span>
+                  <span className="font-bold text-gray-800">{formatPriceShort(order.total)}</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Desktop Table View */}
@@ -305,24 +369,48 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {recentOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-800">{order.id}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{order.customer}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{order.items}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-800">{formatPriceShort(order.total)}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 text-xs rounded-full font-medium ${
-                      order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                      order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {order.status}
-                    </span>
+              {ordersLoading ? (
+                [...Array(3)].map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded"></div></td>
+                  </tr>
+                ))
+              ) : recentOrders.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                    <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>No recent orders found</p>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{order.time}</td>
                 </tr>
-              ))}
+              ) : (
+                recentOrders.map((order) => (
+                  <tr 
+                    key={order.id} 
+                    onClick={() => handleOrderClick(order)}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <td className="px-6 py-4 text-sm font-medium text-gray-800">{order.order_id}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{order.customer}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{order.items_count}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-800">{formatPriceShort(order.total)}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 text-xs rounded-full font-medium ${
+                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{order.time}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -781,23 +869,39 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    {/* Teaching: datalist provides autocomplete with custom input */}
                     <input
                       type="text"
+                      list="categories"
                       value={formData.category || ''}
                       onChange={(e) => setFormData({...formData, category: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="Select or type new category"
                       required
                     />
+                    <datalist id="categories">
+                      {allCategories.map(cat => (
+                        <option key={cat} value={cat} />
+                      ))}
+                    </datalist>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Pack Size</label>
+                    {/* Teaching: Same pattern for pack sizes */}
                     <input
                       type="text"
+                      list="pack-sizes"
                       value={formData.pack_size || ''}
                       onChange={(e) => setFormData({...formData, pack_size: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="e.g., 1kg Pack, 500ml Bottle"
                       required
                     />
+                    <datalist id="pack-sizes">
+                      {existingPackSizes.map(size => (
+                        <option key={size} value={size} />
+                      ))}
+                    </datalist>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
@@ -839,6 +943,86 @@ const AdminDashboard = ({ onNavigate, user, onLogout }) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Order Details Modal */}
+      {showOrderDetails && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Order Details</h3>
+              <button 
+                onClick={() => setShowOrderDetails(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Order ID:</span>
+                    <p className="font-semibold">{selectedOrder.order_id}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Customer:</span>
+                    <p className="font-semibold">{selectedOrder.customer}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-gray-600">Current Status:</span>
+                    <div className="mt-1">
+                      <span className={`px-3 py-1 text-sm rounded-full font-medium ${
+                        selectedOrder.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        selectedOrder.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                        selectedOrder.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                        selectedOrder.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {selectedOrder.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Total:</span>
+                    <p className="font-bold text-lg">{formatPriceShort(selectedOrder.total)}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Items:</span>
+                    <p className="font-semibold">{selectedOrder.items_count}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Teaching: Status Update Section */}
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-800 mb-2">Update Status</h4>
+                <select 
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  defaultValue={selectedOrder.status}
+                  onChange={(e) => handleUpdateOrderStatus(selectedOrder.id, e.target.value)}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <p className="text-xs text-gray-600 mt-1">Status will update immediately</p>
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setShowOrderDetails(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

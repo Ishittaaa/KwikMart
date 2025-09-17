@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Filter, Search, Heart, Star, Plus, Grid, List } from 'lucide-react';
+import { ArrowLeft, Filter, Search, Heart, Plus, Grid, List } from 'lucide-react';
 import { formatPriceShort } from '../utils/currency';
 import { productsAPI } from '../services/api';
 import { useApi } from '../hooks/useApi';

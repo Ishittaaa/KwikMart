@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginScreen = ({ onNavigate }) => {
@@ -42,7 +42,7 @@ const LoginScreen = ({ onNavigate }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="flex items-center justify-center p-4 bg-white shadow-sm">
-        <h1 className="text-xl font-bold">Login to QuickMart</h1>
+        <h1 className="text-xl font-bold">Login to KwickMart</h1>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-4">

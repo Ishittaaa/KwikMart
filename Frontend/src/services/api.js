@@ -1,6 +1,22 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+// Dynamic API URL for network access
+const getApiBaseUrl = () => {
+  const hostname = window.location.hostname;
+  
+  // If accessing via network IP, use same IP for backend
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    return `http://${hostname}:8000`;
+  }
+  
+  // Default to localhost for local development
+  return 'http://127.0.0.1:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Debug: Log the API URL being used
+console.log('API Base URL:', API_BASE_URL);
 
 // Create axios instance
 const api = axios.create({
@@ -8,6 +24,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout for network requests
 });
 
 // Request interceptor to add auth token
@@ -147,6 +164,31 @@ export const adminAPI = {
   
   deleteProduct: async (productId) => {
     const response = await api.delete(`/admin/products/${productId}`);
+    return response.data;
+  },
+  
+  // Orders
+  getRecentOrders: async () => {
+    const response = await api.get('/admin/orders/recent');
+    return response.data;
+  },
+  
+  updateOrderStatus: async (orderId, status) => {
+    // Teaching: PATCH request with query parameter
+    const response = await api.patch(`/admin/orders/${orderId}/status?status=${status}`);
+    return response.data;
+  }
+};
+
+// Orders API
+export const ordersAPI = {
+  createOrder: async (orderData) => {
+    const response = await api.post('/orders/', orderData);
+    return response.data;
+  },
+  
+  getUserOrders: async () => {
+    const response = await api.get('/orders/');
     return response.data;
   }
 };

@@ -4,13 +4,30 @@ from app.routes import auth, products, orders, wishlist, admin
 
 app = FastAPI(title="KwikMart API", version="1.0.0", description="KwikMart E-commerce API")
 
-# CORS middleware - Completely open for development
+# CORS middleware - Network access enabled
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for development
-    allow_credentials=False,  # Set to False when using allow_origins=["*"]
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.1.*:3000",  # Local network range
+        "http://192.168.0.*:3000",  # Alternative network range
+        "http://10.0.0.*:3000",     # Another common range
+        "*"  # Allow all for development
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language", 
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Headers",
+        "Access-Control-Allow-Methods"
+    ],
 )
 
 # Include routers

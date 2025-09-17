@@ -8,6 +8,7 @@ import ProfileScreen from './components/ProfileScreen';
 import LoginScreen from './components/LoginScreen';
 import RegisterScreen from './components/RegisterScreen';
 import AdminDashboard from './components/AdminDashboard';
+import WishlistScreen from './components/WishlistScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import './App.css';
@@ -16,7 +17,17 @@ function AppContent() {
 
   const [currentScreen, setCurrentScreen] = useState('login');
   const [cartItems, setCartItems] = useState([]);
-  const [wishlistItems, setWishlistItems] = useState([]);
+  const [wishlistItems, setWishlistItems] = useState(() => {
+    // Load wishlist from localStorage on app start
+    const savedWishlist = localStorage.getItem('kwikmart-wishlist');
+    return savedWishlist ? JSON.parse(savedWishlist) : [];
+  });
+  
+  // Save wishlist to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('kwikmart-wishlist', JSON.stringify(wishlistItems));
+    console.log('Wishlist saved to localStorage:', wishlistItems);
+  }, [wishlistItems]);
   const [searchQuery, setSearchQuery] = useState('');
   const { user, loading: authLoading, logout } = useAuth();
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -85,18 +96,31 @@ function AppContent() {
   };
 
   const handleToggleWishlist = (product) => {
+    console.log('Toggle wishlist for product:', product.name);
     setWishlistItems(prevItems => {
       const isInWishlist = prevItems.some(item => item.id === product.id);
+      console.log('Is in wishlist:', isInWishlist);
+      
       if (isInWishlist) {
-        return prevItems.filter(item => item.id !== product.id);
+        console.log('Removing from wishlist');
+        const newItems = prevItems.filter(item => item.id !== product.id);
+        console.log('New wishlist items:', newItems);
+        return newItems;
       } else {
-        return [...prevItems, product];
+        console.log('Adding to wishlist');
+        const newItems = [...prevItems, product];
+        console.log('New wishlist items:', newItems);
+        return newItems;
       }
     });
   };
 
   const handleRemoveFromWishlist = (productId) => {
     setWishlistItems(prevItems => prevItems.filter(item => item.id !== productId));
+  };
+  
+  const handleClearCart = () => {
+    setCartItems([]);
   };
 
   const handleNavigate = (screen) => {
@@ -177,6 +201,17 @@ function AppContent() {
             cartItems={cartItems}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
+            onClearCart={handleClearCart}
+            isMobile={isMobile}
+          />
+        );
+      case 'wishlist':
+        return (
+          <WishlistScreen
+            onNavigate={handleNavigate}
+            onAddToCart={handleAddToCart}
+            wishlistItems={wishlistItems}
+            onRemoveFromWishlist={handleRemoveFromWishlist}
             isMobile={isMobile}
           />
         );
